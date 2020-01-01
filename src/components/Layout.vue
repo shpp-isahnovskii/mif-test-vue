@@ -9,8 +9,8 @@
       <resultComponent 
       v-for="(service, index) in searchEnginesServices"
       v-bind:key="index"
-      :albums="service"
-      :artist="artist"
+      :albums="service.albums"
+      :artist="service.artist"
       :serviceName="index" />
     </div>
   </div>
@@ -22,24 +22,33 @@
   import resultComponent from './Result.vue';
   import {DEEZER, I_TUNES} from '@/constants/Vendors';
   import Album from '@/interfaces/Album'
+  import SearchEnginesServices from '@/interfaces/SearchEnginesServices'
 
   @Component({
     components: { searchComponent, resultComponent }
   })
   export default class Layout extends Vue {
     artist: string;
-    searchEnginesServices: any;
+    searchEnginesServices: {[key: string]: SearchEnginesServices};
 
     constructor(){
       super();
       this.artist = '';
+
       this.searchEnginesServices = {
-        [DEEZER]: [], 
-        [I_TUNES]:[]
+        [DEEZER]: {
+          artist: '',
+          albums: []
+          }, 
+        [I_TUNES]: {
+          artist: '',
+          albums: []
+        }
       }
     }
     refresh(api: string, data: Album[]) {
-      this.searchEnginesServices[api] = data;
+      this.searchEnginesServices[api].albums = data;
+      this.searchEnginesServices[api].artist = this.artist;
     }
     setArtist(artist: string): void {
       this.artist = artist;
