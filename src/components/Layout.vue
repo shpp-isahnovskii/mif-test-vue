@@ -1,13 +1,17 @@
 <template>
-  <div>
+  <div class="layout">
     <div class="logo">
       <img src="../assets/imgs/MainLogo.png" alt="logo">
       <h1>Albums search engine</h1>
     </div>
-    <searchComponent v-on:submitted-data="refresh"/>
+    <searchComponent v-on:get-data="refresh" v-on:change-artist="setArtist"/>
     <div class="resultWrapper">
-      <resultComponent class="result" :data="dataDezzer" :artist="nameDezzer" engine="Dezzer" />
-      <resultComponent class="result" :data="dataiTunes" :artist="nameiTunes" engine="iTunes"/>
+      <resultComponent 
+      v-for="(service, index) in searchEnginesServices"
+      v-bind:key="index"
+      :albums="service"
+      :artist="artist"
+      :serviceName="index" />
     </div>
   </div>
 </template>
@@ -16,38 +20,39 @@
   import { Component, Vue } from 'vue-property-decorator';
   import searchComponent from './Search.vue';
   import resultComponent from './Result.vue';
+  import {DEEZER, I_TUNES} from '@/constants/Vendors';
+  import Album from '@/interfaces/Album'
 
   @Component({
     components: { searchComponent, resultComponent }
   })
   export default class Layout extends Vue {
-    dataiTunes: any[]; //hardcoded
-    dataDezzer: any[];
-    nameiTunes: string;
-    nameDezzer: string;
+    artist: string;
+    searchEnginesServices: any;
 
     constructor(){
       super();
-      this.dataiTunes = [{}];
-      this.dataDezzer = [{}];
-      this.nameiTunes = '';
-      this.nameDezzer = '';
+      this.artist = '';
+      this.searchEnginesServices = {
+        [DEEZER]: [], 
+        [I_TUNES]:[]
+      }
     }
-
-    refresh(api:string, name: string, data: object[]) { //hardcoded
-      if(api === 'Dezzer') {
-        this.dataDezzer = data;
-        this.nameDezzer = name;
-      }
-      if(api === 'iTunes') {
-        this.dataiTunes = data;
-        this.nameiTunes = name;
-      }
+    refresh(api: string, data: Album[]) {
+      this.searchEnginesServices[api] = data;
+    }
+    setArtist(artist: string): void {
+      this.artist = artist;
     }
   }
 </script>
 
 <style lang="scss">
+  .layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   .resultWrapper {
     margin-top: 20px;
     padding-top: 10px;
@@ -73,8 +78,5 @@
       font-family: 'Lilita One', cursive; //Font-link placed in the index html
       font-size: 30px;
     }
-  }
-  .result {
-    justify-content: space-around;
   }
 </style>

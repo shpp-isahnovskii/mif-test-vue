@@ -1,37 +1,34 @@
 <template>
-  <div>
-    <div class="engine">{{engine}}</div>
+  <div class="result">
+    <div class="engine">{{serviceName}}</div>
     <div class="artist">{{artist}}</div>
-    <div class="album-block" v-for="(item, index) in text" v-bind:key="index">
+    <div class="album-block" v-for="(album, index) in albums" v-bind:key="index">
       <span>{{index + 1}}. </span>
-      <span>{{item}}</span>
+      <span>{{album.title}}</span>
     </div>
   </div>
 </template>
 
 <script lang="ts">
   import { Component, Vue, Prop, Watch } from 'vue-property-decorator';
+  import Album from '@/interfaces/Album';
 
   @Component({})
   export default class Result extends Vue {
-    text: any[];
-    @Prop({default: 'waiting for search..'}) readonly data!: any[];
-    @Prop({default: '...'}) readonly artist!: string;
-    @Prop({default: '...'}) readonly engine!: string;
-
+    @Prop({default: 'waiting for search..'}) readonly albums!: Album[];
+    @Prop({default: 'waiting for search..'}) readonly artist!: string;
+    @Prop({default: '...'}) readonly serviceName!: string;
+    
     constructor() {
       super();
-      this.text = [];
-    }
-
-    @Watch('data')
-    parseData(newData: any[]) {
-      this.text = newData.map( (element: any) => element.title );
     }
   }
 </script>
 
 <style lang="scss">
+  .result {
+    justify-content: space-around;
+  }
   .artist, .engine {
     font-family: 'Lilita One', cursive; //Font-link placed in the index html
     margin: 10px 0;

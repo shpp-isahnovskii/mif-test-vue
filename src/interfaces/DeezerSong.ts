@@ -1,0 +1,17 @@
+export default interface DeezerSong {
+  id: Number,
+  readable: Boolean,
+  title: string,
+  title_short: string,
+  title_version: string,
+  link: string,
+  duration: Number,
+  rank: Number,
+  explicit_lyrics: true,
+  explicit_content_lyrics: Number,
+  explicit_content_cover: Number,
+  preview: string,
+  artist: Object,
+  album: Object,
+  type: string,
+}

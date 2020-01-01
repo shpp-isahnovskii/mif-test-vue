@@ -8,12 +8,12 @@
 
 <script lang="ts">
   import { Component, Vue, Prop } from 'vue-property-decorator';
-
+  
   @Component({})
   export default class Checkbox extends Vue {
     @Prop({default: 'no title'}) readonly name!: string;
 
-    clickOnChecker(name: string, status: any): void {  //any?
+    clickOnChecker(name: string, status: any): void {
       this.$emit("update-checker", name , status.target.checked );
     }
   }

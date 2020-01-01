@@ -1,13 +1,16 @@
 <template>
   <div>
-    <div class="searchbar-wrapper">
+    <form class="searchbar-wrapper" @submit.prevent="submit">
       <div class="fake-search-icon"></div>
-      <input v-model="inputMessage" placeholder="artist name.." v-on:keyup.enter="submit(searchIn)" />
-      <button v-on:click="submit(searchIn)">GO</button>
-    </div>
+      <input 
+        v-model="artist"
+        placeholder="artist name.."
+      />
+      <button type="submit">GO</button>
+    </form>
     <div class="checkbox-wrapper">
       <searchCheckbox
-        v-for="(item, index) in searchEngines"
+        v-for="(item, index) in checkboxEngines"
         v-bind:key="index"
         :name="item"
         v-on:update-checker="setSearchOptions" 
@@ -19,71 +22,92 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import searchCheckbox from "./searchCheckbox.vue";
+import EngineSearchParams from "@/interfaces/EngineSearchParams";
+import {DeezerApi, DeezerDataResponse} from "@/api/DeezerApi";
+import {ITunesApi, ITunesDataResponse} from '@/api/ITunesApi'
+import {DEEZER, I_TUNES} from "@/constants/Vendors.ts";
+import DeezerSong from '@/interfaces/DeezerSong';
+import Album from '@/interfaces/Album';
+import ITunesSong from '../interfaces/ITunesSong';
 
 @Component({
   components: { searchCheckbox }
 })
 export default class Search extends Vue {
-  inputMessage: string;
-  searchIn: any;    //?
-  searchEngines: string[];
+  artist: string;
+  searchEngines: {[key: string]: EngineSearchParams};
 
 
   constructor() {
     super();
-    this.inputMessage = "";
-    this.searchEngines = ["Dezzer", "iTunes"];
-    this.searchIn = {   //?
-      Dezzer: true,
-      iTunes: true
-    };
+    this.artist = "Eminem";
+    this.searchEngines = {
+      [DEEZER]: {
+        method: this.getDeezer,
+        show: true
+      },
+      [I_TUNES]: {
+        method: this.getItunes,
+        show: true
+      }
+    }
+  }
 
+  getDeezer(): void {
+    DeezerApi.artistSongs(this.artist)
+    .then( (response: Response) => response.json() )
+    .then( (response: DeezerDataResponse) => {
+      
+      let albums = response.data.map( (song: DeezerSong) => {
+        return new Album(song.title);
+      });
+      this.$emit('get-data', DEEZER, albums);
+    })
+    .catch( err => {
+      console.log(err);
+      alert("something going wrong with Deezer..");
+    })
+  }
+
+
+  getItunes(): void {
+    ITunesApi.artistSongs(this.artist)
+    .then( (response: Response) => response.json())
+    .then( (response: ITunesDataResponse) => {
+      
+      let albums = response.results.map( (album: ITunesSong) => {
+        return new Album(album.collectionName);
+      });
+      this.$emit('get-data', I_TUNES, albums);
+    })
+    .catch( err => {
+      console.log(err);
+      alert("something going wrong with ITunes..");
+    })
   }
 
   /* choose between true and false checkbox status */
   setSearchOptions(name: string, status: boolean): void {
-    this.searchIn[name] = status;
+    this.searchEngines[name].show = status;
   }
 
   /* get API data after enter press or click on the button Go  */
-  submit(searchIn: any): void {
-    
-    for (let element in searchIn) {
-      if (searchIn[element] && this.inputMessage !=="") { //hardcoded
-        this.getData(element, this.inputMessage);
+  submit(): void {
+    this.$emit('change-artist', this.artist );
+    if(!this.artist) { //if empty:
+      this.$emit('get-data', DEEZER, []); 
+      this.$emit('get-data', I_TUNES, []);
+      return;
+    }
+    Object.keys(this.searchEngines).forEach( (engine: string) => {
+      if(this.searchEngines[engine].show) {
+        this.searchEngines[engine].method();
       }
-    }
-    this.inputMessage = "";
+    })
   }
 
-    /* get data from the Dezzer */
-  getData(api: string, artist: string): void {
-
-    let url = '';
-
-    //add proxy url for localhost server: https://stackoverflow.com/questions/43262121/trying-to-use-fetch-and-pass-in-mode-no-cors
-    const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-    const options = {
-      method: "GET",
-    }
-
-    if(api === 'Dezzer') { //hardcoded
-      url = "https://api.deezer.com/search?q=" + artist;
-    }
-    if(api === 'iTunes') {
-      url = "https://api.deezer.com/search?q=" + artist + "&entity=music";
-    }
-
-    fetch(proxyUrl + url, options)
-    .then( reresponce => reresponce.json() )
-    .then( result => this.showDataResult(api, artist, result.data) )
-    .catch( err => console.log(err) );
-  }
-
-  /* function send data to parent component, then parent will send it to result */
-  showDataResult(api:string, artist: string, data: any) {
-    console.log(data);
-    this.$emit("submitted-data", api, artist, data);
+  get checkboxEngines() {
+    return Object.keys(this.searchEngines);
   }
 }
 </script>
@@ -125,9 +149,6 @@ $mainColor: rgba(110, 110, 110, 0.5);
     &:focus {
       outline: none;
     }
-    &:before {
-      content: "asd";
-    }
   }
   button {
     z-index: 1;
@@ -138,7 +159,6 @@ $mainColor: rgba(110, 110, 110, 0.5);
     color: white;
     border-radius: 0 15px 15px 0;
     box-shadow: 0px 5px 20px 2px $mainColor;
-    //border-left: 0px solid $mainColor;
     transition: color 0.5s, box-shadow 0.5s, background-color 0.5s;
     font-weight: 800;
     &:focus {
